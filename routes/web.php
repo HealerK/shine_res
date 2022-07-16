@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\DishesController;
+use App\Http\Controllers\OrderController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +19,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Auth::routes();
+
+Route::get('/home', [OrderController::class, 'index'])->name('home');
+Route::resource('/dish',DishesController::class);
