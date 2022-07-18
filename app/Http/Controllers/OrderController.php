@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Dish;
+use App\Models\Order;
+use App\Models\Table;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -11,7 +14,51 @@ class OrderController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(){
-        return view('kitchen.order');
+    public function index()
+    {
+        $dishes = Dish::orderBy('id', 'desc')->get();
+        $tables = Table::all();
+        $rawStatus = config('res.status');
+        $status = array_flip($rawStatus);
+        $orders = Order::where('status', 4)->get();
+        return view('order_form', [
+            "dishes" => $dishes,
+            "tables" => $tables,
+            'orders' => $orders,
+            'status' => $status
+        ]);
+    }
+
+    public function submit(Request $request)
+    {
+        $data = array_filter($request->except('_token', 'table'));
+        $orderId = rand();
+        foreach ($data as $key => $value) {
+            if ($value > 1) {
+                for ($i = 0; $i < $value; $i++) {
+                    $this->orderSubmit($orderId, $key, $request);
+                }
+            } else {
+                $this->orderSubmit($orderId, $key, $request);
+            }
+        }
+        return redirect('/')->with('message', 'Order is successfully!');
+    }
+
+    public function orderSubmit($orderId, $key, $request)
+    {
+        $order = new Order();
+        $order->order_id = $orderId;
+        $order->table_id = $request->table;
+        $order->dish_id = $key;
+        $order->status = config('res.status.new');
+        $order->save();
+    }
+
+    public function serve(Order $order){
+        $order->status = config('res.status.done');
+        $order->save();
+
+        return redirect('/')->with('message','Order Serve!');
     }
 }
